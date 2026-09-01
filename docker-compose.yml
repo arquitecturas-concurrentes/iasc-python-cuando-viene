@@ -1,0 +1,73 @@
+version: '3'
+volumes:
+  mongodb-iasc-data:
+  mongodb-iasc-log:
+services:
+
+  mongo:
+    image: 'mongo:3.6.18-xenial'
+    ports:
+      - '27017:27018'
+    volumes:
+      - 'mongodb-iasc-data:/data/db'
+      - 'mongodb-iasc-log:/var/log/mongodb'
+    expose: [27018]
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongo mongo:27017/test --quiet
+      interval: 10s
+      timeout: 120s
+      retries: 2
+      start_period: 5s
+  cuando-viene-main:
+    image: cuando-viene-main
+    build: 
+      context: ./cuando-viene
+      dockerfile: ./python_src/Dockerfile
+      args:
+        SERVICE: cuando_viene
+    container_name: cuando-viene-main
+    ports:
+      - "3002:3002"
+    restart: always
+  
+  cuando-viene-lineas:
+    image: cuando-viene-lineas
+    build: 
+      context: ./cuando-viene
+      dockerfile: ./python_src/Dockerfile
+      args:
+        SERVICE: lineas
+    container_name: cuando-viene-lineas
+    depends_on:
+      mongo:
+        condition: service_healthy
+    ports:
+      - "3001:3001"
+    restart: always
+  
+  cuando-viene-monitoreo:
+    image: cuando-viene-monitoreo
+    build: 
+      context: ./cuando-viene
+      dockerfile: ./python_src/Dockerfile
+      args:
+        SERVICE: monitoreo
+    container_name: cuando-viene-monitoreo
+    ports:
+      - "3003:3003"
+    environment:
+      - DBHOST=mongodb://db:27018
+      - DBNAME=cuando-viene
+    restart: always    
+  
+  cuando-viene-paradas:
+    image: cuando-viene-paradas
+    build: 
+      context: ./cuando-viene
+      dockerfile: ./python_src/Dockerfile
+      args:
+        SERVICE: paradas
+    container_name: cuando-viene-paradas
+    ports:
+      - "3000:3000"
+    restart: always
