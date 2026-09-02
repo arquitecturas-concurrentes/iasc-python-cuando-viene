@@ -26,6 +26,9 @@ async def unstable_network(request: web.Request, handler):
 
     return await handler(request)
 
+async def registrar_metrica(parada: str):
+    await asyncio.sleep(2) # Simula red lenta
+    print(f"Métrica registrada para parada {parada}")
 
 async def get_stop(request: web.Request) -> web.Response:
     stop = PARADAS.get(request.match_info["parada"])
