@@ -6,13 +6,13 @@
 
 ## Dominio
 
-Estamos a cargo de el desarrollo y mantenimiento de un sistema que nos permite saber cuál 
+Estamos a cargo de el desarrollo y mantenimiento de un sistema que nos permite saber cuál
 es el próximo colectivo de cada línea que va a pasar por mi parada.
 
 Contamos con varios servicios que se encargan de distintos concerns: `lineas`, `paradas` y `cuando-viene`. Este último es el único que va a estar de cara a los usuarios, exponiendo una API REST.
 
 Existe un cuarto componente, `monitoreo`, que nos sirve para conocer el estado del resto de los servicios. Éste expone una página web para ser visualizada por el equipo de infraestructura.
-La misma utiliza [websockets](https://en.wikipedia.org/wiki/WebSocket) para ser notificada ante cambios en los estados. Debería poder soportar varias pestañas abiertas. 
+La misma utiliza [websockets](https://en.wikipedia.org/wiki/WebSocket) para ser notificada ante cambios en los estados. Debería poder soportar varias pestañas abiertas.
 
 ## Implementación
 
@@ -26,23 +26,34 @@ y **no deben modificarse** (`lineas.py` y `utils/actualizacion_lineas.py`).
 
 ## Consigna
 
-Completen los cuatro `TODO` presentes en el código:
+Completen los `TODOs` presentes en el código:
 
-1. **Espera no bloqueante (`paradas.py`, 20 min):** completen el middleware para
+1. **Espera no bloqueante (`paradas.py`):** completen el middleware para
    que uno de cada dos pedidos (excepto `/health`) demore 5 segundos sin bloquear
    el event loop.
-2. **Consultas concurrentes (`cuando_viene.py`, 50 min):** implementen
+2. **Consultas concurrentes (`cuando_viene.py`):** implementen
    `get_line_details` para consultar todas las líneas a la vez. Los resultados
    deben conservar el orden de entrada. No hagan los pedidos secuencialmente.
-3. **Ejecución de una corutina (`cuando_viene.py`, 20 min):** corrijan la consulta
+3. **Tolerancia a fallos (`cuando_viene.py`):** Ajusten `get_line_details`
+   para que si la consulta a una línea particular falla, el endpoint principal
+   no devuelva error, sino que omita esa línea y devuelva los resultados exitosos.
+4. **Ejecución de una corutina (`cuando_viene.py`):** corrijan la consulta
    de la parada en `arrival_times` para trabajar con el resultado y no con el
    objeto corutina.
-4. **Monitoreo periódico (`monitoreo.py`, 45 min):** implementen `monitor` para
+5. **Monitoreo periódico (`monitoreo.py`):** implementen `monitor` para
    consultar los tres servicios concurrentemente, enviar sus estados por el
    WebSocket una vez por segundo y terminar limpiamente al cerrar la conexión.
+6. **Métricas en segundo plano (paradas.py):** Existe una función `registrar_metrica` que demora 2 segundos.
+   Incorpórenla en `get_stop` de forma tal que se ejecute correctamente pero el usuario reciba la respuesta
+   de la parada sin tener que esperar ese tiempo extra.
 
-Los 15 minutos restantes están previstos para integración y prueba. Se puede usar
-`asyncio.gather` en los puntos de concurrencia; no es necesario incorporar
+Bonus:
+
+7. **Control de concurrencia (`cuando_viene.py`):** En `get_line_details` para no saturar la red,
+   implementen un algo que limite a un máximo de 4 consultas concurrentes simultáneas
+   al servicio de líneas.
+
+Se puede usar `asyncio.gather` en los puntos de concurrencia; no es necesario incorporar
 `TaskGroup` ni modificar el manejo de sesiones HTTP ya provisto.
 
 ### Criterios de aceptación
@@ -64,6 +75,9 @@ Los 15 minutos restantes están previstos para integración y prueba. Se puede u
   en que fueron pasadas.
 - El alta y la cancelación de la tarea de monitoreo ya están resueltas en
   `index_or_websocket`; el trabajo pendiente está dentro de `monitor`.
+- `asyncio.Semaphore` es una primitiva de sincronización que se utiliza para limitar el
+  número de tareas concurrentes que pueden acceder a un recurso o bloque de código
+  específico simultáneamente [Semaphore](https://docs.python.org/3/library/asyncio-sync.html#semaphore).
 
 ### Comprobación manual sugerida
 

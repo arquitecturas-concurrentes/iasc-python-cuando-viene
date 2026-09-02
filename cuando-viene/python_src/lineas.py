@@ -1,5 +1,6 @@
 import asyncio
 import json
+import random
 from contextlib import suppress
 from pathlib import Path
 
@@ -15,6 +16,17 @@ DB_PATH = Path(__file__).parent / "db" / "lineas.db.json"
 def read_lines() -> dict:
     with DB_PATH.open(encoding="utf-8") as database:
         return json.load(database)
+
+@web.middleware
+async def random_failure(request: web.Request, handler):
+    """Simula una falla interna en el servicio 1 de cada 10 veces."""
+    if request.path == "/health":
+        return await handler(request)
+
+    if random.random() < 0.1:  # 10% de probabilidad de fallar
+        raise web.HTTPInternalServerError(reason="Falla aleatoria simulada en base de datos")
+
+    return await handler(request)
 
 
 async def get_line(request: web.Request) -> web.Response:
@@ -43,7 +55,7 @@ async def updater_context(app: web.Application):
 
 
 def create_app() -> web.Application:
-    app = web.Application()
+    app = web.Application(middlewares=[random_failure])
     app.cleanup_ctx.append(updater_context)
     app.router.add_get("/health", health)
     app.router.add_get("/lineas/{linea}", get_line)
