@@ -53,8 +53,8 @@ Bonus:
    implementen un algo que limite a un máximo de 4 consultas concurrentes simultáneas
    al servicio de líneas.
 
-Se puede usar `asyncio.gather` en los puntos de concurrencia; no es necesario incorporar
-`TaskGroup` ni modificar el manejo de sesiones HTTP ya provisto.
+Pueden usar `asyncio.gather` o `TaskGroup` en los puntos de concurrencia;
+no es necesario modificar el manejo de sesiones HTTP ya provisto.
 
 ### Criterios de aceptación
 
